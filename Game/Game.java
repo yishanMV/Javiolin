@@ -47,6 +47,8 @@ public class Game
     private int gameDuration;
     private int rng;
 
+    //Field variables for note objects
+
     //Field variables for game state
     private String currentNote;
 	private boolean oneRoundOver;
@@ -329,6 +331,21 @@ public class Game
         {
             infoPages = new CardLayout();
             setLayout(infoPages);
+            
+            JButton home = new JButton("home");
+            add(home);
+            
+            
+            class homeButtonHandler implements ActionListener
+            {
+				public void actionPerformed(ActionEvent evt)
+				{
+					gph.showCard("home");
+				}
+			}
+			
+			homeButtonHandler hbhandler = new homeButtonHandler();
+			home.addActionListener(hbhandler);
         }
 
 
@@ -432,7 +449,14 @@ public class Game
             private JLabel timerLabel; // Label to display the time
             private Image noteImage; // Image for the note
             private int x;
+            private int arrayIndex;
             private int y;
+
+            private int noteLength;
+            private int noteX;
+            private int noteY;
+            
+            
 
             public mainGamePanel()
             {
@@ -500,23 +524,26 @@ public class Game
                 noteTimer.start(); // Start the note dropping process
             }
 
-            private void dropNoteAcrossScreen(String note) //currently working on logic
+            private void dropNoteAcrossScreen(String note) //Triggers events that cause a note fall in drawDestination
             {
                 System.out.println("Dropping note: " + note);
                 drawDestination(note); // Update the destination rectangle
-                noteFall(note); // Call the method to animate the note falling
 
             }
 
       /*noteNames = new String[]{"N/A", "A3", "B3", "C4", "D4", //g string excluding g
             "E4", "F4", "G4","A4",  //d string
             "B4", "C5", "D5", "E5", //a
-            "F5", "G5", "A5", "B5", "C6", "D6", "E6", "F6"};    //e */
+            "F5", "G5", "A5", "B5", "C6", "D6", "E6", "F6"};    //e */ 
             public void drawDestination(String note)
             {
+				String savedNote;
+				int stringLocation;
+				stringLocation = -1;
                 System.out.println("Drawing destination for note: " + note);
                 x = 525;
                 y = 211; //Default y position for the destination rectangle
+                noteLength = 48;
                 rng = (int)(Math.random() * 2 );    //To solve confusion between notes available on both strings and improve variation
                 System.out.println(rng + "");
                 for(int i = 0; i < noteNames.length; i++)
@@ -531,6 +558,7 @@ public class Game
                             y += (i - 1) * 52;  //moves down string
 
                             System.out.println("G string");
+                            stringLocation = 0;
                         }
                         else if(i <= 8 && i > 4) //Technically playable on G and D string
                         {
@@ -539,12 +567,14 @@ public class Game
                                 x = 749;    //G string
                                 y += (i - 1) * 52;  //moves down string
                                 System.out.println("G string");
+                                stringLocation = 0;
                             }
                             else
                             {
                                 x = 763;    //D string
                                 y += (i - 5) * 52;  //moves down string
                                 System.out.println("D string");
+                                stringLocation = 1;
                             }
 
                         }
@@ -555,6 +585,7 @@ public class Game
                                 x = 763;    //D string
                                 y += (i - 5) * 52;  //moves down string
                                 System.out.println("D string");
+                                stringLocation = 1;
                             }
                             else
                             {
@@ -562,6 +593,7 @@ public class Game
                                 y += (i - 9) * 52;  //moves down string
 
                                 System.out.println("A string");
+                                stringLocation = 2;
                             }
                         }
                         else if(i <= 16 && i > 12)  //Technically playable on A and E string
@@ -571,12 +603,14 @@ public class Game
                                 x = 776;    //A string
                                 y += (i - 9) * 52;  //moves down string
                                 System.out.println("A string");
+                                stringLocation = 2;
                             }
                             else
                             {
                                 x = 789;    //E string
                                 y += (i - 13) * 52;  //moves down string
                                 System.out.println("E string");
+                                stringLocation = 3;
                             }
                         }
                         else //Only E string
@@ -584,14 +618,36 @@ public class Game
                             System.out.println("E string");
                             y += (i - 13) * 52;  //moves down string
                             x = 789;
+                            stringLocation = 3;
                         }
+                        
+                        /*
+
+                        
+                        if(i < 8 && rng == 0)   //if note on g string
+                        {
+							if(i > 4)
+							{
+                                y -= i;
+							}
+						}
+						else
+						{
+							arrayIndex = i % 8;
+							if(arrayIndex > 4)
+							{
+                                y -= i;
+							}
+						}	*/
 
                     }
+                    
+					noteFall(note, stringLocation); // Call the method to animate the note falling
                 }
                 repaint(); // Trigger repaint to draw the destination
             }
 
-            public void noteFall(String note)
+            public void noteFall(String note, int location)
             {
                 // Logic to animate the note falling across the screen
                 // This is where you would implement the animation logic
@@ -654,8 +710,12 @@ public class Game
                 g.drawImage(images[1], 0, 0, getWidth(), getHeight(), this);
                 g.drawImage(images[7], 550, 50, 450, 675, this);
                 g.setColor(Color.GREEN);
-                g.fillRect(x, y, 12, 48); // Draw the destination rectangle
+                g.fillRect(x, y, 12, noteLength); // Draw the destination rectangle
             }
+
+            class notes
+            {
+            } 
 
             class infoBarPanel extends JPanel
             {

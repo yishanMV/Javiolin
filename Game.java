@@ -47,6 +47,8 @@ public class Game
     private int gameDuration;
     private int rng;
 
+    //Field variables for note objects
+
     //Field variables for game state
     private String currentNote;
 	private boolean oneRoundOver;
@@ -449,23 +451,31 @@ public class Game
             private int x;
             private int arrayIndex;
             private int y;
+
+            private int noteLength;
             private int noteX;
             private int noteY;
+            
+            private noteDestination[] noteDest;
+            private infoBarPanel infoBar;
+            private statsBarPanel statsBar;
             
             
 
             public mainGamePanel()
             {
                 setLayout(new BorderLayout());
-                statsBarPanel statsBar = new statsBarPanel();
+                statsBar = new statsBarPanel();
                 statsBar.setPreferredSize(new Dimension(getWidth(), 50));
-                infoBarPanel infoBar = new infoBarPanel();
+				infoBar = new infoBarPanel();
                 infoBar.setPreferredSize(new Dimension(getWidth(), 50));
 
                 add(infoBar, BorderLayout.NORTH);
                 add(statsBar, BorderLayout.SOUTH);
 
                 noteImage = images[12]; // Easy access
+                
+                noteDest = new noteDestination[100];
             }
 
             public void startGame()
@@ -492,7 +502,7 @@ public class Game
                             gameTimer.stop();
                             changeScene("results"); // Switch to results page after timer ends
                         }
-                        repaint(); // Updates the timer display
+                        statsBar.repaint(); // Updates the timer display
                     }
                 }
                 timerHandler th = new timerHandler(); // Create a new timer handler
@@ -511,19 +521,23 @@ public class Game
 
             public void readMusicFileAndDropNotes()
             {
+				for(int i = 0; i < noteDest.length; i++)	//when game starts, all the note objects are null
+				{
+					noteDest[i] = null;
+				}
                 resetMusicScanner(); // Reset the Scanner before starting to drop notes
                 Timer noteTimer = new Timer(0, null); // Timer for dropping notes
                 noteTimer.setRepeats(false); // Ensure the timer only triggers once per note
 
-                ActionListener dropNextNote = new NoteDropperHandler(this, noteTimer, musicScanner);
+                ActionListener dropNextNote = new NoteDropperHandler(this, noteTimer, musicScanner, infoBar);
                 noteTimer.addActionListener(dropNextNote);
                 noteTimer.start(); // Start the note dropping process
             }
 
-            private void dropNoteAcrossScreen(String note) //Triggers events that cause a note fall in drawDestination
+            private void dropNoteAcrossScreen(String note, int durationIn, int noteDestIDIn) //Triggers events that cause a note fall in drawDestination
             {
                 System.out.println("Dropping note: " + note);
-                drawDestination(note); // Update the destination rectangle
+                drawDestination(note, durationIn, noteDestIDIn); // Update the destination rectangle
 
             }
 
@@ -531,16 +545,26 @@ public class Game
             "E4", "F4", "G4","A4",  //d string
             "B4", "C5", "D5", "E5", //a
             "F5", "G5", "A5", "B5", "C6", "D6", "E6", "F6"};    //e */ 
-            public void drawDestination(String note)
+            public void drawDestination(String note, int durationIn, int noteDestIDIn)
             {
+				//Field variables
 				String savedNote;
 				int stringLocation;
+				int duration;
+				
+				//Initialize variables
+				duration = durationIn;
 				stringLocation = -1;
                 System.out.println("Drawing destination for note: " + note);
                 x = 525;
                 y = 211; //Default y position for the destination rectangle
+                noteLength = 48;
                 rng = (int)(Math.random() * 2 );    //To solve confusion between notes available on both strings and improve variation
-                System.out.println(rng + "");
+                
+                
+                System.out.println(rng + "");	//Testing
+                
+                
                 for(int i = 0; i < noteNames.length; i++)
                 {
                     if(note.equals(noteNames[i]))   //y start at 211, note =48, account for  ?3 gaps
@@ -615,35 +639,16 @@ public class Game
                             x = 789;
                             stringLocation = 3;
                         }
-                        
-                        if(i < 8 && rng == 0)
-                        {
-							if(i > 4)
-							{
-								y -= 2 * i;
-							}
-						}
-						else
-						{
-							arrayIndex = i % 8;
-							if(arrayIndex > 4)
-							{
-								y -= 2 * i;
-							}
-						}	
-
                     }
                     
 					noteFall(note, stringLocation); // Call the method to animate the note falling
                 }
-                repaint(); // Trigger repaint to draw the destination
+                noteDest[noteDestIDIn] = new noteDestination(noteDestIDIn, x, y, duration);
+                repaint();
             }
 
             public void noteFall(String note, int location)
             {
-                // Logic to animate the note falling across the screen
-                // This is where you would implement the animation logic
-                // For now, we'll just print the note to the console
                 System.out.println("Note falling: " + note);
             }
 
@@ -653,11 +658,19 @@ public class Game
                 private final mainGamePanel gamePanel;
                 private final Timer noteTimer;
                 private final Scanner musicScanner;
+                private int delay;
+                private int duration;
+                private int noteDestID;
+                private infoBarPanel infoBar;
 
-                public NoteDropperHandler(mainGamePanel gamePanel, Timer noteTimer, Scanner musicScanner) {
+                public NoteDropperHandler(mainGamePanel gamePanel, Timer noteTimer, Scanner musicScanner, infoBarPanel infoBarIn)
+                {
                     this.gamePanel = gamePanel;
                     this.noteTimer = noteTimer;
                     this.musicScanner = musicScanner;
+                    noteDestID = 0;
+                    infoBar = infoBarIn;
+                    
                 }
 
                 public void actionPerformed(ActionEvent e) 
@@ -666,14 +679,15 @@ public class Game
                     {
                         String note = musicScanner.next(); // Read the note name
                         currentNote = note; // Store the current note
-                        gamePanel.repaint(); // Update the hint label with the current note
+                        infoBar.repaint(); // Update the hint label with the current note
+                        noteDestID += 1;
 
                         if (musicScanner.hasNextInt())
                         {
-                            int duration = musicScanner.nextInt(); // Read the duration
-                            int delay = duration * 1000; // Convert seconds to milliseconds
+                            duration = musicScanner.nextInt(); // Read the duration
+                            delay = duration * 1000; // Convert seconds to milliseconds
 
-                            gamePanel.dropNoteAcrossScreen(note);
+                            gamePanel.dropNoteAcrossScreen(note, duration, noteDestID);
 
 
                             // Schedule the next note drop
@@ -684,7 +698,7 @@ public class Game
                         else 
                         {
                             // Drop the note immediately if no duration is specified
-                            gamePanel.dropNoteAcrossScreen(note);
+                            gamePanel.dropNoteAcrossScreen(note, delay, noteDestID);
                             noteTimer.setInitialDelay(0);
                             noteTimer.restart();
                         }
@@ -698,12 +712,93 @@ public class Game
 
             public void paintComponent(Graphics g)
             {
+				int noteX;
+				int noteY;
+				int duration;
+				boolean noteEnded;
+				
+				noteDestination note;
+				
                 super.paintComponent(g);
                 g.drawImage(images[1], 0, 0, getWidth(), getHeight(), this);
                 g.drawImage(images[7], 550, 50, 450, 675, this);
                 g.setColor(Color.GREEN);
-                g.fillRect(x, y, 12, 48); // Draw the destination rectangle
+                
+                for(int noteID = 0; noteID < noteDest.length; noteID++)
+                {
+					note = noteDest[noteID];
+					if(note != null)
+					{
+						noteEnded = note.getState();
+						if(!noteEnded)
+						{
+							noteX = note.getX();
+							noteY = note.getY();
+							duration = note.getDuration();
+					
+							System.out.println(noteID + " " + noteX + " " + noteY + " " + duration);
+						
+							g.fillRect(noteX, noteY, 12, noteLength); // Draw the destination rectangle
+						}
+					}
+				}
+					
             }
+
+            class noteDestination	//Object for note destinations, a new object is created each time a new note is read form the scanner
+            {						//All notes are reset to null after the round ends
+				private int noteID;
+				private int noteX;
+				private int noteY;
+				private int duration;
+				private boolean noteEnd;
+				private Timer noteDuration;
+				
+				public noteDestination(int noteDestIDIn, int noteXIn, int noteYIn, int durationIn)
+				{
+					noteID = noteDestIDIn;
+					noteX = noteXIn;
+					noteY = noteYIn;
+					duration = durationIn;
+					noteEnd = false;
+					System.out.println(noteID + " " + noteX + " hi");
+					
+					class TimerHandler implements ActionListener
+					{
+						public void actionPerformed(ActionEvent evt)
+						{
+							noteEnd = true;
+						}
+					}
+					
+					TimerHandler th = new TimerHandler();
+					noteDuration = new Timer(duration, th);
+				}
+				
+				public int getID()
+				{
+					return noteID;
+				}
+				
+				public int getX()
+				{
+					return noteX;
+				}
+				
+				public int getY()
+				{
+					return noteY;
+				}
+				public int getDuration()
+				{
+					return duration;
+				}
+				
+				public boolean getState()
+				{
+					return noteEnd;
+				}
+            } 
 
             class infoBarPanel extends JPanel
             {

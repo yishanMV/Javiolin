@@ -9,6 +9,7 @@
 //This class is the main game panel of the game. It contains all the game logic, including the game timer, note dropping, and score tracking.
 //I will implement key press logic/note guessing next week.
 
+//toimplement: "e" instead of e5 in hints, baseline 0 points, and catch lowercase e
 
 //Imports
 import java.awt.BorderLayout;
@@ -207,6 +208,7 @@ public class GamePanel extends JPanel
             if (!e.getValueIsAdjusting())
             {
               String selected = songList.getSelectedValue();
+              game.setGameMode("song");
 
               if (selected.equals("test"))
               {
@@ -231,6 +233,7 @@ public class GamePanel extends JPanel
               else if (selected.contains("freeplay"))
               {
                 songName = "freeplay";
+                game.setGameMode("freeplay");
               }
             }
           }
@@ -296,6 +299,7 @@ public class GamePanel extends JPanel
         private int noteX;
         private int noteY;
         private int rng;
+        private int freeplayNoteID;
         private String previousNote;
         private boolean gamePaused;   
         private boolean gameContinued;   
@@ -310,6 +314,7 @@ public class GamePanel extends JPanel
             gameContinued = false;
 
             setLayout(new BorderLayout());  //Set layout to border layout
+            setOpaque(false);
 
             //Make an instance of the stats bar and info bar, sets their size, and adds them to the panel
             statsBar = new statsBarPanel();
@@ -332,24 +337,36 @@ public class GamePanel extends JPanel
         //Starts the game
         public void startGame()
         {
-            String getSongName = game.getSongName(); //Get the game mode
+            String gameMode = game.getGameMode(); //Get the game mode
             missedNotes =  new int[noteNames.length];
             correctNotes = new int[noteNames.length];
-             
-            if(getSongName.equals("freeplay"))    //Check if the gamemode is not song, and is Freeplay mode
-            {
-                gameDuration = 5; //Set the game duration to 10 seconds
-                startGameTimer(); //Start the 10-second timer
-            }
             gamePaused = false;
-            readMusicFileAndDropNotes(mainGame); //Start dropping notes
+            correctNoteCount = 0;
+            totalNoteCount = 0;
+            currentNote = "";
+            infoBar.repaint();
+            statsBar.repaint();
+            
+            noteDest = new noteDestination[100];
+            notes = new noteFall[100];
+             
+            if(!gameMode.equals("song"))    //Check if the gamemode is not song, and is Freeplay mode
+            {
+				freeplayNoteID = 0; //Reset note ID for freeplay mode
+                gameDuration = game.getGameDuration(); //Set the game duration to 10 seconds
+                startGameTimer(); //Start the 10-second timer
+                game.setGameMode("freeplay");                
+                generateRandomNotesForFreeplay();
+            }
+            else
+				readMusicFileAndDropNotes(mainGame); //Start dropping notes
 
         }
 
         //Starts the game timer in freeplay mode
         public void startGameTimer()
         {
-            timeLeft = 10; // Reset the timer to 10 seconds
+            timeLeft = gameDuration; // Reset the timer to the intended game duration in seconds
             //Stops timer 
             if (gameTimer != null && gameTimer.isRunning())
             {
@@ -390,6 +407,59 @@ public class GamePanel extends JPanel
             }
         }
 
+		public void generateRandomNotesForFreeplay()
+		{
+			Timer noteWait = new Timer(1000, null);
+			noteWait.setRepeats(false);
+
+			class FreeplayNoteHandler implements ActionListener
+			{
+
+				public void actionPerformed(ActionEvent e)
+				{
+					if (timeLeft > 0 && game.isGameInSession()) // Ensure the game is still running
+					{
+						System.out.println(freeplayNoteID + "note dest id");
+						int randomIndex = 0;
+						
+						while(randomIndex == 0)
+							randomIndex = (int) (Math.random() * noteNames.length); // Generate a random note
+							
+						String randomNote = noteNames[randomIndex];
+						int randomDuration = 1 + (int) (Math.random() * 3); // Random duration between 1 and 3 seconds
+						int randomWaitTime = 1000 + (int) (Math.random() * 2000); //Random wait time between 1 and 3 seconds (in ms)
+
+						if(randomDuration < timeLeft)
+						{
+							currentNote = randomNote;
+							dropNoteAcrossScreen(mainGame, randomNote, randomDuration, freeplayNoteID); // Drop the random note
+						
+							freeplayNoteID++;
+						
+							noteWait.setInitialDelay(randomWaitTime); // Set next wait time
+							noteWait.restart(); // Wait before next drop
+						}
+						
+						infoBar.repaint();
+						statsBar.repaint();
+						results.updateResults();
+						
+					}
+					else
+					{
+						results.updateResults();	//Updates all the labels in the results panel to show the correct stats of the user	
+						System.out.println("results updated");					
+						gp.changeScene("results");	//Go to results screen
+						noteWait.stop(); // Stop note waiting/generatint timer
+					}
+				}
+			}
+
+			FreeplayNoteHandler fnh = new FreeplayNoteHandler();
+			noteWait.addActionListener(fnh);
+			noteWait.start(); // Start waiting before the first note
+		}
+		
         //Reads the music file and drops notes
         public void readMusicFileAndDropNotes(mainGamePanel mainGameIn)
         {
@@ -427,7 +497,7 @@ public class GamePanel extends JPanel
         }
 
         //Drops a note across the screen
-        private void dropNoteAcrossScreen(mainGamePanel gamePanelIn, String note, int durationIn, int noteDestIDIn) //Triggers events that cause a note fall in drawDestination
+        public void dropNoteAcrossScreen(mainGamePanel gamePanelIn, String note, int durationIn, int noteDestIDIn) //Triggers events that cause a note fall in drawDestination
         {
             System.out.println("Dropping note: " + note);   
             drawDestination(gamePanelIn, note, durationIn, noteDestIDIn); // Update the destination rectangle location
@@ -1000,6 +1070,9 @@ public class GamePanel extends JPanel
 					{
 						requestFocusInWindow();	//Requests focus once a key is pressed
 						guess = evt.getKeyChar();	//Sets guess as the user's key press
+						
+						if(guess >= 'A' && guess <= 'Z')	//Checks if the user's input is uppercase
+							guess += 32;	//Converts the uppercase character to lowercase
 					}
 				}
 				
@@ -1077,12 +1150,12 @@ public class GamePanel extends JPanel
                 g.drawImage(images[10], 20, 10, 30, 30, this); // Draw home.png on the home button
                 g.drawImage(images[11], 65, 10, 30, 30, this); // Draw timer.png next to the timer label
                 
-                if(game.getSongName().equals("freeplay"))
+                if(game.getGameMode().equals("freeplay"))
 					timerLabel.setText("Time Left: " + timeLeft + "s"); // Update the timer label
 				else
 					timerLabel.setText("Timer Off for Song Mode"); // Update the timer label
                 if(game.getHint())
-					hintLabel.setText("Hint: " + currentNote); // Update the hint label
+					hintLabel.setText("Hint: " + currentNote.substring(0, 1)); // Update the hint label
 				else
 					hintLabel.setText("Hints: Off, Can Turn On in Settings");
             }

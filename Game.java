@@ -19,7 +19,7 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
-import java.io.PrintWriter;
+
 
 //Class header 
 public class Game
@@ -54,9 +54,6 @@ public class Game
     //Field variables for objects
     public GamePanelHolder gph;
     public Scanner musicScanner; 
-    
-    public PrintWriter output;
-    public File outFile;
 
     //Field variables for layout
     public CardLayout cl;  //Main CardLayout to switch between the home, game, instructions, and settings
@@ -121,7 +118,7 @@ public class Game
             "timer.png", "note.png", "character1.png", "selectionscreen.png", "S.png",
             "A.png", "B.png", "C.png", "D.png", "F.png",
             "chatBox.png", "feedbackKey.png", "feedbackTitle.png", "songBox.png", "instructions.png",
-            "feedbackButton.png" 
+            "feedbackButton.png", "instructions1.png", "instructions2.png", "instructions3.png"
             };
 
         //Array to store all images
@@ -217,46 +214,6 @@ public class Game
             e.printStackTrace();
             System.exit(1);
         }
-         try
-		{
-			 outFile= new File("temp.txt");
-			output = new PrintWriter("temp.txt");
-		}
-		catch(IOException e)
-		{
-			System.err.println("\n\n\nERROR: Cannot create"+"temp.txt"+"file.\n\n\n");
-			System.exit(2);
-		}
-		
-		
-		String line = "";
-		boolean end= true;
-		while(musicScanner.hasNext()&&end)
-		{
-			line=musicScanner.nextLine();
-			if(line.equals("freeplay"))
-			{
-				end=false;
-			}
-			output.println(line);
-		}
-		
-		for(int i=0;i<=120;i++)
-		{
-			int rand = (int)(Math.random()*noteNames.length-1)+1;
-			char randc = (char) rand;
-			int rand2 = (int)(Math.random()*2)+1;
-			output.print(noteNames[rand]+"("+ rand2+") 1 ");
-
-			if (i%8==0&&i!=0)
-			{
-				output.println();
-			}
-		}
-		output.print("end");
-		output.close();
-		outFile.renameTo(new File("Data/music.txt"));
-		
     }	
 
 

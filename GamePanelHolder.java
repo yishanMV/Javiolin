@@ -6,7 +6,8 @@
 //
 //GamePanelHolder.java
 //
-//This class holds all the panels of the game. It uses a CardLayout to switch between panels.
+//This class holds all the panels of the game. It uses a CardLayout to switch between panels, and also has 
+//methods to allow different panels to communicate and call each other's methods to update information.
 
 //Import layouts
 import java.awt.CardLayout;
@@ -20,6 +21,9 @@ public class GamePanelHolder extends JPanel
     public CardLayout cl;
     public Game game;
     private GamePanel gamePanel;
+    HomePanel hp;
+    InstructionPanelHolder iph;
+    SettingsPanel sp;
 
     //Constructor to initialize the GamePanelHolder, and add all the panels to the card layout
     public GamePanelHolder(Game gameIn)
@@ -30,13 +34,13 @@ public class GamePanelHolder extends JPanel
         setLayout(cl);  //Sets the layout of the panel to the card layout
 
         //Make an instance of all panels and send in an instance of game and this GamePanelHolder 
-        HomePanel hp = new HomePanel(game, this); 
+        hp = new HomePanel(game, this); 
         gamePanel = new GamePanel(game, this);
-        InstructionPanelHolder ip = new InstructionPanelHolder(game, this);
-        SettingsPanel sp = new SettingsPanel(game, this);
+        iph = new InstructionPanelHolder(game, this);
+        sp = new SettingsPanel(game, this);
 
         //Add all the panels to the card layout
-        add(ip, "instructions");
+        add(iph, "instructions");
         add(hp, "home");
         add(gamePanel, "game");
         add(sp, "settings");
@@ -49,6 +53,12 @@ public class GamePanelHolder extends JPanel
     {
         cl.show(this, cardName);    //Switch to the specified card
     }
+    
+    //Helps connect the game panel class to the home panel class when updating all home panel displayed stats after a round of the game is finished
+    public void updateStatsInHome()
+    {
+		hp.updateStats();
+	}
 
     //Gets the game panel object
     public GamePanel getGamePanel()

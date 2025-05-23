@@ -30,11 +30,16 @@ public class InstructionPanelHolder extends JPanel
     //Field variables for objects
     private CardLayout infoPages;
     private GamePanelHolder gph;
+    private Game game;
+	private Image[] images;
+	private InstructionPanelHolder iphln= this;
 
     //Makes a card layout to hold all the instruction panels and adds panels to it
-    public InstructionPanelHolder(Game game, GamePanelHolder gphIn)
+    public InstructionPanelHolder(Game gameln, GamePanelHolder gphIn)
     {
-        gph = gphIn;    //Initialize GamePanelHolder object
+        game = gameln;
+        gph = gphIn;
+        images = game.getImages();
 
         //Set layout to card layout
         infoPages = new CardLayout();
@@ -44,11 +49,13 @@ public class InstructionPanelHolder extends JPanel
         firstInstructionPanel fip = new firstInstructionPanel(this);
         secondInstructionPanel sip = new secondInstructionPanel(this);
         thirdInstructionPanel tip = new thirdInstructionPanel(this);
+        fourthInstructionPanel foip = new fourthInstructionPanel(this);
 
         //Add all the panels to the card layout
         add(fip, "firstInstructionPanel");
         add(sip, "secondInstructionPanel");
         add(tip, "thirdInstructionPanel");
+        add(foip, "fourthInstructionPanel");
 
         infoPages.show(this, "firstInstructionPanel");  //Show the first instruction panel by default
     }
@@ -61,149 +68,222 @@ public class InstructionPanelHolder extends JPanel
         {
             setLayout(null);    //Set layout to null
 
-            //Create a button to go to the next instruction panel and add an action listener to it
-            JButton nextButton = new JButton("Next");
-            nextButton.setBounds(550, 50, 450, 675);
+            //Next button to go to second panel
+            JButton nextButton = new JButton("");
+            nextButton.setBounds(875, 600, 100, 100);
+            nextButton.setContentAreaFilled(false); 
+            nextButton.setBorderPainted(false); 
+            nextButton.setFocusPainted(true); 
             nextButton.addActionListener(new NextButtonHandler(iph, "secondInstructionPanel"));
 
-            //Tries to load an image for the button and set it as the icon for the button
-            try
-            {
-                Image img = ImageIO.read(new File("Images/fingerboard.png"));
-                img = img.getScaledInstance(450, 675, Image.SCALE_DEFAULT);
-                nextButton.setIcon(new ImageIcon(img));
-            }
-            catch (Exception e)
-            {
-                System.out.println(e);
-            }
+            //Home button
+            JButton homeButton = new JButton("");
+            homeButton.setBounds(50, 600, 100, 100);
+            homeButton.addActionListener(new HomeButtonHandler());
+            homeButton.setContentAreaFilled(false); 
+            homeButton.setBorderPainted(false); 
+            homeButton.setFocusPainted(true); 
 
-            //Create a text area for the instructions and add it to a scroll pane
-            JTextArea text = new JTextArea("This is the first instruction panel. Follow the instructions carefully.");
+            //Instruction text
+            JTextArea text = new JTextArea("Welcome to Javiolin!\n\nUse your keyboard to play violin notes based"
+				+ " on notes that will drop across the screen.\nMatch the correct pitch to score points.\n\nIn this game, " 
+				+ "timing AND accuracy matter.\nUse the buttons to look at how the game works. \nClick 'Next' to learn about the interface.");
             text.setLineWrap(true);
+            text.setWrapStyleWord(true);
+            text.setEditable(false);
             JScrollPane jsp = new JScrollPane(text);
-            jsp.setBounds(50, 50, 400, 200);
+            jsp.setBounds(250, 250, 500, 300);
 
-            //Add components to the panel
-            add(jsp);
+            //Add components
+            add(homeButton);
             add(nextButton);
+            add(jsp);
         }
 
-        //Resets background of the panel
         public void paintComponent(Graphics g)
         {
-            super.paintComponent(g);    //Clear the panel background
-            // Add any background image or color if needed later
+            super.paintComponent(g);
+            g.drawImage(images[1], 0, 0, getWidth(), getHeight(), this);    //Background
+            g.drawImage(images[8], 50, 600, 100, 100, this); //home
+            g.drawImage(images[25], 175, 50, 650, 100, this);	//Instructions title text
+            g.drawImage(images[3], 875, 600, 100, 100, this); //next
         }
     }
 
-    //The second instruction panel, that contains more information
+    //The second instruction panel
     class secondInstructionPanel extends JPanel
     {
-        //Constructor to initialize the second instruction panel, with more instructions
-        //This panel is currently work in progress
         public secondInstructionPanel(InstructionPanelHolder iph)
         {
             setLayout(null);    //Set layout to null
 
-            //Create a button to go to the next instruction panel and add an action listener to it
-            JButton backButton = new JButton("Back");
-            backButton.setBounds(450, 350, 100, 50);
-            backButton.addActionListener(new NextButtonHandler(iph, "thirdInstructionPanel"));
+            //Back button
+            JButton backButton = new JButton("");
+            backButton.setBounds(750, 600, 100, 100);
+            backButton.setContentAreaFilled(false); 
+            backButton.setBorderPainted(false); 
+            backButton.setFocusPainted(true); 
+            backButton.addActionListener(new NextButtonHandler(iph, "firstInstructionPanel"));
 
-            //Create a button to go to the previous instruction panel and add an action listener to it
-            JButton nextButton = new JButton("Next");
-            nextButton.setBounds(550, 50, 450, 675);
-            nextButton.addActionListener(new BackButtonHandler(iph, "firstInstructionPanel"));
+            //Next button
+            JButton nextButton = new JButton("");
+            nextButton.setBounds(875, 600, 100, 100);
+            nextButton.setContentAreaFilled(false); 
+            nextButton.setBorderPainted(false); 
+            nextButton.setFocusPainted(true); 
+            nextButton.addActionListener(new BackButtonHandler(iph, "thirdInstructionPanel"));
 
-            //Create a button to go back to the home page and add an action listener to it
-            JButton homeButton = new JButton("Home");
-            homeButton.setBounds(600, 350, 100, 50);
+            //Home button
+            JButton homeButton = new JButton("");
+            homeButton.setBounds(50, 600, 100, 100);
+            homeButton.setContentAreaFilled(false); 
+            homeButton.setBorderPainted(false); 
+            homeButton.setFocusPainted(true); 
             homeButton.addActionListener(new HomeButtonHandler());
 
-            //Add components to panel
+            //Add components
             add(backButton);
+            add(nextButton);
             add(homeButton);
+        }
+
+        public void paintComponent(Graphics g)
+        {
+            super.paintComponent(g);
+            g.drawImage(images[27], 0, 0, getWidth(), getHeight(), this);    
+            g.drawImage(images[3], 875, 600, 100, 100, this); //next
+            g.drawImage(images[6], 750, 600, 100, 100, this); //back
+            g.drawImage(images[8], 50, 600, 100, 100, this); //home
         }
     }
 
-    //Currently working on the layout for the third instruction panel
+    //The third instruction panel
     class thirdInstructionPanel extends JPanel
     {
-        //Constructor to initialize the third instruction panel
         public thirdInstructionPanel(InstructionPanelHolder iph)
         {
             setLayout(null);    //Set layout to null
 
-            //Create a button to go to the previous instruction panel and add an action listener to it
-            JButton backButton = new JButton("Back");
-            backButton.setBounds(450, 350, 100, 50);
-            backButton.addActionListener(new BackButtonHandler(iph, "firstInstructionPanel"));
+            //Next button
+            JButton nextButton = new JButton("");
+            nextButton.setBounds(875, 600, 100, 100);
+            nextButton.setContentAreaFilled(false); 
+            nextButton.setBorderPainted(false); 
+            nextButton.setFocusPainted(true); 
+            nextButton.addActionListener(new NextButtonHandler(iph, "fourthInstructionPanel"));
+            
+            //Back button
+            JButton backButton = new JButton("");
+            backButton.setBounds(750, 600, 100, 100);
+            backButton.setContentAreaFilled(false); 
+            backButton.setBorderPainted(false); 
+            backButton.setFocusPainted(true); 
+            backButton.addActionListener(new BackButtonHandler(iph, "secondInstructionPanel"));
 
-            //Create a button to go back to the home page and add an action listener to it
-            JButton homeButton = new JButton("Home");
-            homeButton.setBounds(600, 350, 100, 50);
+            //Home button
+            JButton homeButton = new JButton("");
+            homeButton.setBounds(50, 600, 100, 100);
+            homeButton.setContentAreaFilled(false); 
+            homeButton.setBorderPainted(false); 
+            homeButton.setFocusPainted(true); 
             homeButton.addActionListener(new HomeButtonHandler());
 
-            //Add components to the panel
+            //Add components
+            add(nextButton);
             add(backButton);
             add(homeButton);
         }
+
+        public void paintComponent(Graphics g)
+        {
+            super.paintComponent(g);
+            g.drawImage(images[28], 0, 0, getWidth(), getHeight(), this);
+            g.drawImage(images[3], 875, 600, 100, 100, this); //next    
+            g.drawImage(images[8], 50, 600, 100, 100, this); //home
+            g.drawImage(images[6], 750, 600, 100, 100, this); //back
+        }
     }
 
-    //Action listeners for the buttons
+    class fourthInstructionPanel extends JPanel
+    {
+        public fourthInstructionPanel(InstructionPanelHolder iph)
+        {
+            setLayout(null);    //Set layout to null
+            
+            //Back button
+            JButton backButton = new JButton("");
+            backButton.setBounds(875, 600, 100, 100);
+            backButton.setContentAreaFilled(false); 
+            backButton.setBorderPainted(false); 
+            backButton.setFocusPainted(true); 
+            backButton.addActionListener(new BackButtonHandler(iph, "thirdInstructionPanel"));
 
-    //Action listener for the next button, to go to the next panel
+            //Home button
+            JButton homeButton = new JButton("");
+            homeButton.setBounds(50, 600, 100, 100);
+            homeButton.setContentAreaFilled(false); 
+            homeButton.setBorderPainted(false); 
+            homeButton.setFocusPainted(true); 
+            homeButton.addActionListener(new HomeButtonHandler());
+            
+
+            //Add components
+            add(backButton);
+            add(homeButton);
+        }
+        
+        public void paintComponent(Graphics g)
+        {
+            super.paintComponent(g);
+            g.drawImage(images[29], 0, 0, getWidth(), getHeight(), this);
+            g.drawImage(images[3], 875, 600, 100, 100, this); //next    
+            g.drawImage(images[8], 50, 600, 100, 100, this); //home
+            g.drawImage(images[6], 875, 600, 100, 100, this); //back
+        }
+    }
+
+    //Action listeners
+
     class NextButtonHandler implements ActionListener
     {
-        //Field variables for objects
         private InstructionPanelHolder iph;
         private String targetPanel;
 
-        //Constructor that receives the InstructionPanelHolder and the target panel to switch to
         public NextButtonHandler(InstructionPanelHolder iphIn, String targetPanelIn)
         {
-            //Initialize field variables
             iph = iphIn;
             targetPanel = targetPanelIn;
         }
 
-        //Action performed that switches to the target panel when button clicked
         public void actionPerformed(ActionEvent e)
         {
-            infoPages.show(iph, targetPanel);   //Switch to the target panel
+            infoPages.show(iph, targetPanel);
         }
     }
 
-    //Action listener for the back button, to go oto the previous panel
     class BackButtonHandler implements ActionListener
     {
-        //Field variables for objects
         private InstructionPanelHolder iph;
         private String targetPanel;
 
-        //Constructor that receives the InstructionPanelHolder and the target panel to switch to
         public BackButtonHandler(InstructionPanelHolder iphIn, String targetPanelIn)
         {
-            //Initialize field variables
             iph = iphIn;
             targetPanel = targetPanelIn;
         }
 
-        //Action performed that switches to the target panel when button clicked
         public void actionPerformed(ActionEvent e)
         {
-            infoPages.show(iph, targetPanel);   //Switch to the target panel
+            infoPages.show(iph, targetPanel);
         }
     }
 
-    //Action listener for the home button, to go back to the home page
     class HomeButtonHandler implements ActionListener
     {
-        //Action performed that switches to the home panel when button clicked
         public void actionPerformed(ActionEvent e)
         {
-            gph.showCard("home");   //Switches to the home panel in the main card layout in GamePanelHolder
+            infoPages.show(iphln, "firstInstructionPanel");
+            gph.showCard("home");
         }
     }
 }

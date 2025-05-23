@@ -6,7 +6,8 @@
 //
 //HomePanel.java
 //
-//This class is the home screen of the game. It contains buttons to play the game, view instructions, and access settings.
+//This class is the home screen of the game. It displays stats and contains
+//buttons to play the game, view instructions, and access settings.
 
 //Import layouts
 import java.awt.Color;
@@ -18,6 +19,10 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.Timer;
+import java.util.Scanner;
+import java.io.FileNotFoundException; 
+import java.io.File;
 
 //Class header
 public class HomePanel extends JPanel
@@ -27,18 +32,23 @@ public class HomePanel extends JPanel
     //Field variables for files
     private Image[] images; //Array of images
 
-    //Field variables for objects
-    private Game game;  //Game object
-    private GamePanelHolder gph;    //GamePanelHolder object
-
-    //Field variables for game stats
-    private int notesCountTotal;    //Total number of notes played
-    private int accuracyPercent;    //Accuracy percentage
+    //Field variables for classes
+    private Game game;
+    private GamePanelHolder gph;  
+    
+    //Field variables for components
+    private JLabel accuracy;
+    private JLabel notesPlayed;
+    private JLabel highscore;
 
     //Field variables for fonts
     private Font title; //Font for title
     private Font buttonText;    //Font for button text
     private Font subtitle;  //Font for subtitle
+
+    //Field variables for glow effect
+    private double glowValue = 0.0; //Glow value for the glow effect
+    private boolean glowIncreasing = true; //Direction of the glow animation (Whether it is becoming darker/lighter)
 
     //Constructor
     public HomePanel(Game gameIn, GamePanelHolder gphIn)
@@ -47,8 +57,6 @@ public class HomePanel extends JPanel
         game = gameIn;
         images = game.getImages();
         gph = gphIn;
-        notesCountTotal = game.getNotesCountTotal();
-        accuracyPercent = game.getAccuracyPercent();
 			
         //Set background color
 		Color WHITE = new Color(255, 255, 255);
@@ -57,59 +65,61 @@ public class HomePanel extends JPanel
         //Set fonts for title, button text, and subtitle
         title = new Font("Arial", Font.BOLD, 100);
         buttonText = new Font("Arial", Font.PLAIN, 50);
-        subtitle = new Font("Arial", Font.PLAIN, 20);
+        subtitle = new Font("Arial", Font.PLAIN, 18);
 
         //Set layout to null and add buttons and labels
         setLayout(null);
 
         //For buttons, I put transparent JButtons over a drawn image of the button to improve aesthetics
 
-        //Create Jbuttons with no content area filled, no border painted, with focus painted, and with font set.
+        //Create Jbuttons
+        
+        //Button to start the game
         JButton play = new JButton("");
         play.setContentAreaFilled(false); 
         play.setBorderPainted(false); 
         play.setFocusPainted(true); 
         play.setFont(buttonText);
 
+		//Button to go to instructions
         JButton help = new JButton("");
         help.setContentAreaFilled(false);
         help.setBorderPainted(false);
         help.setFocusPainted(true);
         help.setFont(buttonText);
 
+		//Button to go to settings
         JButton settings = new JButton("");
         settings.setContentAreaFilled(false);
         settings.setBorderPainted(false);
         settings.setFocusPainted(true);
         settings.setFont(buttonText);
 
-        //Set the text for the buttons as JLabels
-        JLabel accuracy = new JLabel("Accuracy: N/A");
+        //Set the text for stats as JLabels
+        
+        //Shows the accuracy
+        accuracy = new JLabel("Overall Accuracy: N/A");
         accuracy.setFont(subtitle);
 
-        JLabel notesPlayed = new JLabel("Notes Played: N/A");
+		//Shows total notes played
+        notesPlayed = new JLabel("Total Notes Played: 0");
         notesPlayed.setFont(subtitle);
 
-        JLabel highscore = new JLabel("Highscore: N/A");
+		//Shows the highscore
+        highscore = new JLabel("Highscore: N/A");
         highscore.setFont(subtitle);
             
-        //Update the text of the home page stats once the first game ends and the user receives their first stats
-        boolean oneRoundOver = game.isOneRoundOver();
-        if(oneRoundOver)
-        {
-			accuracy.setText("Accuracy: %" + accuracyPercent);
-			notesPlayed.setText("Notes Played: " + notesCountTotal);
-		}
-
+		updateStats();	//Updates when game starts to load highscore
+		
         //Set the bounds for the buttons and labels
-        //I set very specific bounds so everything is in the right exact place
+        //I set very specific bounds so everything is in the right exact place (On top of the image)
         play.setBounds(520, 308, 280, 90);
         help.setBounds(520, 406, 280, 90);
         settings.setBounds(520, 503, 280, 86);
-            
-        accuracy.setBounds(275, 350, 200, 30);
-        notesPlayed.setBounds(275, 375, 200, 30);
-        highscore.setBounds(275, 400, 200, 30);
+        
+        accuracy.setBounds(250, 350, 400, 30);
+        notesPlayed.setBounds(250, 375, 400, 30);
+        highscore.setBounds(250, 400, 400, 30);
 
         //Adds the buttons and labels to the panel
         add(play);
@@ -123,6 +133,10 @@ public class HomePanel extends JPanel
 		play.addActionListener(new PlayButtonListener());
         help.addActionListener(new HelpButtonListener());
         settings.addActionListener(new SettingsButtonListener());
+
+        //Initialize and start the glow animation timer
+        Timer glowTimer = new Timer(20, new GlowTimerHandler());
+        glowTimer.start();
     }
         
     //Draws the images and text on the panel
@@ -130,14 +144,99 @@ public class HomePanel extends JPanel
     {
         super.paintComponent(g);    //Clear the panel
 
-        //Draws background images
         g.drawImage(images[1], 0, 0, getWidth(), getHeight(), this);
+
+        // Draw the glowing effect covering the entire screen
+        Color glowColor = new Color(0, 0, 0, (int) (glowValue * 175)); // Dark black with varying alpha
+        g.setColor(glowColor);
+        g.fillRect(0, 0, getWidth(), getHeight());
+
+        //Draws background images
         g.drawImage(images[2], 300, 50, 400, 100, this);
         g.drawImage(images[4], 225, 250, 600, 400, this);
 
         //Draws the title for the stats 
         g.setFont(subtitle);
-        g.drawString("My Stats", 275, 325);
+        g.drawString("My Stats", 320, 325);
+    }
+    
+    //Called to update all stats on the homescreen labels
+    public void updateStats()
+    {
+		//D&I variables based on field variables from Game.java
+		int lifetimeNotes = game.getLifetimeNotes();
+		int totalNotes = game.getNotesCountTotal();
+		int correctNotes = game.getNoteCorrectTotal();
+		int highscoreOverall = getHighestScore();	//Calls method to calculate highscore
+		
+		//Updates the accuracy label
+		//Checks if there are no total notes to avoid math error (division by 0)
+		if(totalNotes != 0)	//If total notes is not 0
+		{
+			double overallAccuracy = ((double)correctNotes/totalNotes) * 100;	//Calculate accuracy
+			accuracy.setText("Overall Accuracy: " + String.format("%.2f", overallAccuracy) + " %");	//Update accuracy label
+		}
+		else
+		{
+			accuracy.setText("Overall Accuracy: N/A");	//Updates accuracy label to show that this stat is not available yet
+		}
+		
+		//Updates total notes and highscore stats labels
+		notesPlayed.setText("Total Notes Played: " + lifetimeNotes);
+		highscore.setText("Highscore: " + highscoreOverall);		
+	}
+	
+	//Reads highscore.txt to find the highscore
+	public int getHighestScore() 
+	{
+		int highestScore = 0;	//D&I variable to store high score
+		File highscoreFile = new File("Data/highscore.txt");	//Makes the file
+		Scanner lineReader = null;	//
+		try 
+		{
+			lineReader = new Scanner(highscoreFile);
+			while (lineReader.hasNextInt()) 
+			{
+				int score = lineReader.nextInt();
+				if (score > highestScore)
+					highestScore = score;
+			}
+		} 
+		catch (FileNotFoundException e) 
+		{
+			System.err.println("Error: highscore.txt not found.");
+		} 
+        if (lineReader != null)
+            lineReader.close();
+    
+		return highestScore;
+	}
+
+    // Timer handler for the glow animation
+    private class GlowTimerHandler implements ActionListener
+    {
+        public void actionPerformed(ActionEvent e)
+        {
+            // Update the alpha value for the glow effect
+            if (glowIncreasing) 
+            {
+                glowValue += 0.005;
+                if (glowValue >= 0.8) // Limit the glow to a subtle level
+                {
+                    glowIncreasing = false;
+                }
+            } 
+            else 
+            {
+                glowValue -= 0.005;
+                if (glowValue <= 0.3) // Minimum glow level
+                {
+                    glowIncreasing = true;
+                }
+            }
+
+            repaint(); // Repaint the panel to reflect changes
+        }
     }
 
     //Action listeners for the buttons
